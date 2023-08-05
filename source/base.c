@@ -73,7 +73,7 @@ static void C3Di_AptEventHook(APT_HookType hookType, C3D_UNUSED void* param)
 	}
 }
 
-bool C3D_Init(size_t cmdBufSize)
+bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize)
 {
 	int i;
 	C3D_Context* ctx = C3Di_GetContext();
@@ -88,7 +88,7 @@ bool C3D_Init(size_t cmdBufSize)
 	if (!ctx->cmdBuf)
 		return false;
 
-	ctx->gxQueue.maxEntries = 32;
+	ctx->gxQueue.maxEntries = gxQueueSize;
 	ctx->gxQueue.entries = (gxCmdEntry_s*)malloc(ctx->gxQueue.maxEntries*sizeof(gxCmdEntry_s));
 	if (!ctx->gxQueue.entries)
 	{
@@ -131,6 +131,16 @@ bool C3D_Init(size_t cmdBufSize)
 	aptHook(&hookCookie, C3Di_AptEventHook, NULL);
 
 	return true;
+}
+
+bool C3D_Init(size_t cmdBufSize)
+{
+	return C3Di_Init(cmdBufSize, 32 /* default gxQueueSize size */);
+}
+
+bool C3D_InitEx(size_t cmdBufSize, size_t gxQueueSize)
+{
+	return C3Di_Init(cmdBufSize, gxQueueSize);
 }
 
 void C3D_SetViewport(u32 x, u32 y, u32 w, u32 h)

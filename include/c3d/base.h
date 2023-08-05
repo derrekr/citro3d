@@ -10,6 +10,7 @@ enum
 	C3D_UNSIGNED_SHORT = 1,
 };
 
+bool C3D_InitEx(size_t cmdBufSize, size_t gxQueueSize);
 bool C3D_Init(size_t cmdBufSize);
 void C3D_Fini(void);
 
