@@ -30,7 +30,9 @@ typedef struct
 
 typedef struct
 {
-	gxCmdQueue_s gxQueue;
+	gxCmdQueue_s gxQueues[2];
+	gxCmdQueue_s* gxQueue;
+	u32* cmdBufs[2];
 	u32* cmdBuf;
 	size_t cmdBufSize;
 	float cmdBufUsage;
@@ -85,6 +87,7 @@ enum
 	C3DiF_LightEnv = BIT(10),
 	C3DiF_VshCode = BIT(11),
 	C3DiF_GshCode = BIT(12),
+	C3DiF_DoubleBuf = BIT(13),
 	C3DiF_TexStatus = BIT(14),
 	C3DiF_ProcTex = BIT(15),
 	C3DiF_ProcTexColorLut = BIT(16),

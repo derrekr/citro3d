@@ -91,7 +91,7 @@ u32 C3D_FrameCounter(int id)
 
 static bool C3Di_WaitAndClearQueue(s64 timeout)
 {
-	gxCmdQueue_s* queue = &C3Di_GetContext()->gxQueue;
+	gxCmdQueue_s* queue = C3Di_GetContext()->gxQueue;
 	if (!gxCmdQueueWait(queue, timeout))
 		return false;
 	gxCmdQueueStop(queue);
@@ -117,9 +117,9 @@ void C3Di_RenderQueueInit(void)
 
 	C3Di_RenderQueueEnableVBlank();
 
-	GX_BindQueue(&ctx->gxQueue);
-	gxCmdQueueSetCallback(&ctx->gxQueue, onQueueFinish, NULL);
-	gxCmdQueueRun(&ctx->gxQueue);
+	GX_BindQueue(ctx->gxQueue);
+	gxCmdQueueSetCallback(ctx->gxQueue, onQueueFinish, NULL);
+	gxCmdQueueRun(ctx->gxQueue);
 }
 
 void C3Di_RenderQueueExit(void)
@@ -128,7 +128,7 @@ void C3Di_RenderQueueExit(void)
 	C3D_RenderTarget *a, *next;
 
 	C3Di_WaitAndClearQueue(-1);
-	gxCmdQueueSetCallback(&C3Di_GetContext()->gxQueue, NULL, NULL);
+	gxCmdQueueSetCallback(C3Di_GetContext()->gxQueue, NULL, NULL);
 	GX_BindQueue(NULL);
 
 	C3Di_RenderQueueDisableVBlank();
@@ -237,7 +237,7 @@ void C3D_FrameEnd(u8 flags)
 
 	measureGpuTime = true;
 	osTickCounterStart(&gpuTime);
-	gxCmdQueueRun(&ctx->gxQueue);
+	gxCmdQueueRun(ctx->gxQueue);
 }
 
 void C3D_FrameEndHook(void (* hook)(void*), void* param)
@@ -395,7 +395,7 @@ static void C3Di_SafeDisplayTransfer(u32* inadr, u32 indim, u32* outadr, u32 out
 	C3Di_WaitAndClearQueue(-1);
 	inSafeTransfer = true;
 	GX_DisplayTransfer(inadr, indim, outadr, outdim, flags);
-	gxCmdQueueRun(&C3Di_GetContext()->gxQueue);
+	gxCmdQueueRun(C3Di_GetContext()->gxQueue);
 }
 
 static void C3Di_SafeTextureCopy(u32* inadr, u32 indim, u32* outadr, u32 outdim, u32 size, u32 flags)
@@ -403,7 +403,7 @@ static void C3Di_SafeTextureCopy(u32* inadr, u32 indim, u32* outadr, u32 outdim,
 	C3Di_WaitAndClearQueue(-1);
 	inSafeTransfer = true;
 	GX_TextureCopy(inadr, indim, outadr, outdim, size, flags);
-	gxCmdQueueRun(&C3Di_GetContext()->gxQueue);
+	gxCmdQueueRun(C3Di_GetContext()->gxQueue);
 }
 
 static void C3Di_SafeMemoryFill(u32* buf0a, u32 buf0v, u32* buf0e, u16 control0, u32* buf1a, u32 buf1v, u32* buf1e, u16 control1)
@@ -411,7 +411,7 @@ static void C3Di_SafeMemoryFill(u32* buf0a, u32 buf0v, u32* buf0e, u16 control0,
 	C3Di_WaitAndClearQueue(-1);
 	inSafeTransfer = true;
 	GX_MemoryFill(buf0a, buf0v, buf0e, control0, buf1a, buf1v, buf1e, control1);
-	gxCmdQueueRun(&C3Di_GetContext()->gxQueue);
+	gxCmdQueueRun(C3Di_GetContext()->gxQueue);
 }
 
 void C3D_SyncDisplayTransfer(u32* inadr, u32 indim, u32* outadr, u32 outdim, u32 flags)

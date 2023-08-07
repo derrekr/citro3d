@@ -73,9 +73,11 @@ static void C3Di_AptEventHook(APT_HookType hookType, C3D_UNUSED void* param)
 	}
 }
 
-bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize)
+bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize, bool doubleBuf)
 {
-	int i;
+	int i, numQueues;
+	size_t allocSize;
+	u8 *cmdBuf;
 	C3D_Context* ctx = C3Di_GetContext();
 
 	if (ctx->flags & C3DiF_Active)
@@ -83,20 +85,40 @@ bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize)
 
 	cmdBufSize = (cmdBufSize + 0xF) &~ 0xF; // 0x10-byte align
 	ctx->cmdBufSize = cmdBufSize/4;
-	ctx->cmdBuf = (u32*)linearAlloc(cmdBufSize);
-	ctx->cmdBufUsage = 0;
-	if (!ctx->cmdBuf)
+	allocSize = doubleBuf ? cmdBufSize * 2 : cmdBufSize;
+	cmdBuf = (u8*)linearAlloc(allocSize);
+	if (!cmdBuf)
 		return false;
 
-	ctx->gxQueue.maxEntries = gxQueueSize;
-	ctx->gxQueue.entries = (gxCmdEntry_s*)malloc(ctx->gxQueue.maxEntries*sizeof(gxCmdEntry_s));
-	if (!ctx->gxQueue.entries)
+	ctx->cmdBufs[0] = (u32*)cmdBuf;
+	ctx->cmdBufs[1] = (u32*)(doubleBuf ? &cmdBuf[cmdBufSize] : NULL);
+	ctx->cmdBufUsage = 0;
+
+	// Allocate GX Queue
+	numQueues = doubleBuf ? 2 : 1;
+	for (i = 0; i < numQueues; i++)
 	{
-		linearFree(ctx->cmdBuf);
-		return false;
+		ctx->gxQueues[i].maxEntries = gxQueueSize;
+		ctx->gxQueues[i].entries = (gxCmdEntry_s*)malloc(gxQueueSize*sizeof(gxCmdEntry_s));
+		if (!ctx->gxQueues[i].entries)
+		{
+			linearFree(ctx->cmdBufs[0]);
+			ctx->cmdBufs[0] = NULL;
+			ctx->cmdBufs[1] = NULL;
+			if (ctx->gxQueues[0].entries)
+				free(ctx->gxQueues[0].entries);
+			ctx->gxQueues[0].entries = NULL;
+			ctx->gxQueues[1].entries = NULL;
+			return false;
+		}
 	}
 
+	ctx->cmdBuf = ctx->cmdBufs[0];
+	ctx->gxQueue = &ctx->gxQueues[0];
+
 	ctx->flags = C3DiF_Active | C3DiF_TexEnvBuf | C3DiF_TexEnvAll | C3DiF_Effect | C3DiF_TexStatus | C3DiF_TexAll;
+	if (doubleBuf)
+		ctx->flags |= C3DiF_DoubleBuf;
 
 	// TODO: replace with direct struct access
 	C3D_DepthMap(true, -1.0f, 0.0f);
@@ -135,12 +157,12 @@ bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize)
 
 bool C3D_Init(size_t cmdBufSize)
 {
-	return C3Di_Init(cmdBufSize, 32 /* default gxQueueSize size */);
+	return C3Di_Init(cmdBufSize, 32 /* default gxQueueSize size */, false);
 }
 
-bool C3D_InitEx(size_t cmdBufSize, size_t gxQueueSize)
+bool C3D_InitEx(size_t cmdBufSize, size_t gxQueueSize, bool doubleBuf)
 {
-	return C3Di_Init(cmdBufSize, gxQueueSize);
+	return C3Di_Init(cmdBufSize, gxQueueSize, doubleBuf);
 }
 
 void C3D_SetViewport(u32 x, u32 y, u32 w, u32 h)
@@ -351,7 +373,8 @@ void C3D_Fini(void)
 
 	aptUnhook(&hookCookie);
 	C3Di_RenderQueueExit();
-	free(ctx->gxQueue.entries);
+	free(ctx->gxQueues[0].entries);
+	free(ctx->gxQueues[1].entries);
 	linearFree(ctx->cmdBuf);
 	ctx->flags = 0;
 }
