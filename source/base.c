@@ -47,7 +47,8 @@ static void C3Di_AptEventHook(APT_HookType hookType, C3D_UNUSED void* param)
 		}
 		case APTHOOK_ONRESTORE:
 		{
-			C3Di_RenderQueueEnableVBlank();
+			C3Di_RenderQueueEnableVBlank(&ctx->gxQueues[1]);
+			C3Di_RenderQueueEnableVBlank(&ctx->gxQueues[0]);
 			ctx->flags |= C3DiF_AttrInfo | C3DiF_BufInfo | C3DiF_Effect | C3DiF_FrameBuf
 				| C3DiF_Viewport | C3DiF_Scissor | C3DiF_Program | C3DiF_VshCode | C3DiF_GshCode
 				| C3DiF_TexAll | C3DiF_TexEnvBuf | C3DiF_TexEnvAll | C3DiF_LightEnv | C3DiF_Gas;
@@ -75,7 +76,7 @@ static void C3Di_AptEventHook(APT_HookType hookType, C3D_UNUSED void* param)
 
 bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize, bool doubleBuf)
 {
-	int i, numQueues;
+	int i;
 	size_t allocSize;
 	u8 *cmdBuf;
 	C3D_Context* ctx = C3Di_GetContext();
@@ -94,9 +95,8 @@ bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize, bool doubleBuf)
 	ctx->cmdBufs[1] = (u32*)(doubleBuf ? &cmdBuf[cmdBufSize] : NULL);
 	ctx->cmdBufUsage = 0;
 
-	// Allocate GX Queue
-	numQueues = doubleBuf ? 2 : 1;
-	for (i = 0; i < numQueues; i++)
+	// Allocate GX Queues
+	for (i = 0; i < 2; i++)
 	{
 		ctx->gxQueues[i].maxEntries = gxQueueSize;
 		ctx->gxQueues[i].entries = (gxCmdEntry_s*)malloc(gxQueueSize*sizeof(gxCmdEntry_s));
@@ -149,7 +149,10 @@ bool C3Di_Init(size_t cmdBufSize, size_t gxQueueSize, bool doubleBuf)
 	ctx->fixedAttribDirty = 0;
 	ctx->fixedAttribEverDirty = 0;
 
-	C3Di_RenderQueueInit();
+	// init both gxQueues
+	C3Di_RenderQueueInit(&ctx->gxQueues[1]);
+	C3Di_RenderQueueInit(&ctx->gxQueues[0]);
+	
 	aptHook(&hookCookie, C3Di_AptEventHook, NULL);
 
 	return true;
