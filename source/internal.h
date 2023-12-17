@@ -32,6 +32,7 @@ typedef struct
 {
 	gxCmdQueue_s gxQueues[2];
 	gxCmdQueue_s* gxQueue;
+	u32 curCmdBufIndex;
 	u32* cmdBufs[2];
 	u32* cmdBuf;
 	size_t cmdBufSize;

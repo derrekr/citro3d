@@ -22,6 +22,7 @@ enum
 {
 	C3D_FRAME_SYNCDRAW = BIT(0), // Perform C3D_FrameSync before checking the GPU status
 	C3D_FRAME_NONBLOCK = BIT(1), // Return false instead of waiting if the GPU is busy
+	C3D_FRAME_NONDOUBLEBUF = BIT(2), // Do not use double buffering
 };
 
 float C3D_FrameRate(float fps);
