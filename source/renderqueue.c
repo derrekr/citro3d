@@ -99,22 +99,18 @@ static bool C3Di_WaitAndClearQueue(s64 timeout)
 	gxCmdQueueClear(queue);
 	return true;
 }
-/*
+
 static bool C3Di_WaitAndClearOtherQueue(s64 timeout)
 {
 	C3D_Context *ctx = C3Di_GetContext();
 	gxCmdQueue_s *other  = &ctx->gxQueues[(ctx->curCmdBufIndex + 1) % 2];
 
-	//printf("C3Di_WaitAndClearOtherQueue: gxCmdQueueWait\n");
-	while (!gxCmdQueueWait(other, 0)) {
-		//printf("waiting on other queue %li!\n", (ctx->curCmdBufIndex + 1) % 2);
-	}
-
-	//gxCmdQueueStop(other);
-	//gxCmdQueueClear(other);
+	gxCmdQueueWait(other, timeout);
+	gxCmdQueueStop(other);
+	gxCmdQueueClear(other);
 	return true;
 }
-*/
+
 void C3Di_RenderQueueEnableVBlank(gxCmdQueue_s *queue)
 {
 	gspSetEventCallback(GSPGPU_EVENT_VBlank0, onVBlank0, NULL, false);
@@ -193,8 +189,6 @@ bool C3D_FrameBegin(u8 flags)
 	if (flags & C3D_FRAME_SYNCDRAW)
 		C3D_FrameSync();
 	if ((ctx->flags & C3DiF_DoubleBuf) && !(flags & C3D_FRAME_NONDOUBLEBUF)) {
-		//if (!C3Di_WaitAndClearOtherQueue((flags & C3D_FRAME_NONBLOCK) ? 0 : -1))
-			//return false;
 		C3Di_SwapQueuesAndCmdBuf();
 	}
 	else if (!C3Di_WaitAndClearQueue((flags & C3D_FRAME_NONBLOCK) ? 0 : -1))
@@ -265,11 +259,7 @@ void C3D_FrameEnd(u8 flags)
 			needSwapBot = true;
 	}
 
-	// TODO: is this correct?
-	// Note that gxCmdQueueWait ignores the queue argument and only waits on the current active queue
-	while (!gxCmdQueueWait(ctx->gxQueue, 0)) {
-		gspWaitForAnyEvent();
-	}
+	C3Di_WaitAndClearOtherQueue(-1);
 
 	measureGpuTime = true;
 	osTickCounterStart(&gpuTime);
