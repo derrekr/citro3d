@@ -1,6 +1,7 @@
-# citro3d
+# WARNING
 
-citro3d is a library that provides an easy to use stateful interface to the PICA200 GPU of the Nintendo 3DS. It tries to expose hardware functionality in the way that is most natural and convenient to the GPU and the user, therefore deviating from openGL.
+Only use this fork if you really need to (e.g. you're building srb2_3ds and want to benefit from the dual command buffer performance).
+In all other cases, get the oficial citro3d via pacman.
 
 # Setup
 
