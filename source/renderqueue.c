@@ -111,7 +111,7 @@ static bool C3Di_WaitAndClearOtherQueue(s64 timeout)
 	return true;
 }
 
-void C3Di_RenderQueueEnableVBlank(gxCmdQueue_s *queue)
+void C3Di_RenderQueueEnableVBlank(void)
 {
 	gspSetEventCallback(GSPGPU_EVENT_VBlank0, onVBlank0, NULL, false);
 	gspSetEventCallback(GSPGPU_EVENT_VBlank1, onVBlank1, NULL, false);
@@ -125,7 +125,7 @@ void C3Di_RenderQueueDisableVBlank(void)
 
 void C3Di_RenderQueueInit(gxCmdQueue_s *queue)
 {
-	C3Di_RenderQueueEnableVBlank(queue);
+	C3Di_RenderQueueEnableVBlank();
 
 	GX_BindQueue(queue);
 	gxCmdQueueSetCallback(queue, onQueueFinish, NULL);
@@ -155,6 +155,10 @@ void C3Di_RenderQueueExit(void)
 
 void C3Di_RenderQueueWaitDone(void)
 {
+	C3D_Context* ctx = C3Di_GetContext();
+
+	if (ctx->flags & C3DiF_DoubleBuf)
+		C3Di_WaitAndClearOtherQueue(-1);
 	C3Di_WaitAndClearQueue(-1);
 }
 
@@ -259,7 +263,8 @@ void C3D_FrameEnd(u8 flags)
 			needSwapBot = true;
 	}
 
-	C3Di_WaitAndClearOtherQueue(-1);
+	if (ctx->flags & C3DiF_DoubleBuf)
+		C3Di_WaitAndClearOtherQueue(-1);
 
 	measureGpuTime = true;
 	osTickCounterStart(&gpuTime);

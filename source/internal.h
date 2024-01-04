@@ -160,5 +160,5 @@ bool C3Di_SplitFrame(u32** pBuf, u32* pSize);
 void C3Di_RenderQueueInit(gxCmdQueue_s *queue);
 void C3Di_RenderQueueExit(void);
 void C3Di_RenderQueueWaitDone(void);
-void C3Di_RenderQueueEnableVBlank(gxCmdQueue_s *queue);
+void C3Di_RenderQueueEnableVBlank(void);
 void C3Di_RenderQueueDisableVBlank(void);
